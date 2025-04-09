@@ -31,7 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-.mvn/
-refined-config-repo/
-*.dtmp
-*.drawio.bkp
