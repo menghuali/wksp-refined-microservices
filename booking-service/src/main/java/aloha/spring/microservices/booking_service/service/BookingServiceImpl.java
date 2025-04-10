@@ -1,6 +1,8 @@
 package aloha.spring.microservices.booking_service.service;
 
-import static aloha.spring.microservices.booking_service.model.BookingStatus.*;
+import static aloha.spring.microservices.booking_service.model.BookingStatus.BOOKED;
+import static aloha.spring.microservices.booking_service.model.BookingStatus.CANCELLED;
+import static aloha.spring.microservices.booking_service.model.BookingStatus.NEW;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -64,16 +66,15 @@ public class BookingServiceImpl implements BookingService {
             SeatReservationRequest seatReserveReq = new SeatReservationRequest(request.getFlight(),
                     booking.getGuests().size());
             SeatReservation reservation = fiAdapter.reserveSeat(seatReserveReq);
-            booking.setStatus(SEAT_RESERVED);
             booking.setSeatsReservationId(reservation.getId());
             booking.setAmountDue(reservation.getAmountDue());
 
             // Redeem points
+            booking.setPointsRedeemed(0);
             booking.setDeductionAmount(BigDecimal.ZERO);
             if (request.getLoyaltyId() != null && request.getRedeemingPoints()) {
                 PointsRedemption redemption = loyaltyAdapter.redeemPoints(
                         new PointsRedemptionRequest(booking.getLoyaltyId(), booking.getAmountDue()));
-                booking.setStatus(POINTS_REDEEMED);
                 booking.setRedemptionId(redemption.getId());
                 booking.setPointsRedeemed(redemption.getPointsRedeemed());
                 booking.setDeductionAmount(redemption.getDeductionAmount());
@@ -87,16 +88,17 @@ public class BookingServiceImpl implements BookingService {
             Payment payment = paymentAdapter.pay(new PaymentRequest(amountToPay, booking.getCreditCardNumber()));
             booking.setPaymentId(payment.getId());
             booking.setAmountPaid(payment.getAmountPaid());
-            booking.setStatus(PAID);
 
             // Earn points
-            PointsEarned pointsEarned = loyaltyAdapter
-                    .earnPoints(new PointsEarningRequest(booking.getLoyaltyId(), booking.getAmountPaid()));
-            booking.setPointsEarningId(pointsEarned.getId());
-            booking.setPointsEarned(pointsEarned.getPoints());
+            booking.setPointsEarned(0);
+            if (request.getLoyaltyId() != null) {
+                PointsEarned pointsEarned = loyaltyAdapter
+                        .earnPoints(new PointsEarningRequest(booking.getLoyaltyId(), booking.getAmountPaid()));
+                booking.setPointsEarningId(pointsEarned.getId());
+                booking.setPointsEarned(pointsEarned.getPoints());
+            }
 
             booking.setStatus(BOOKED);
-
             // Save and return the booking
             return repo.save(booking);
         } catch (Exception e) {
@@ -107,17 +109,17 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private void rollbackBooking(Booking booking) {
-        switch (booking.getStatus()) {
-            case PAID:
-                paymentAdapter.refund(booking.getPaymentId());
-            case POINTS_REDEEMED:
-                loyaltyAdapter.reclaimPoints(booking.getRedemptionId());
-            case SEAT_RESERVED:
-                fiAdapter.cancelReservation(booking.getSeatsReservationId());
-                break;
-            default:
-                break;
-        }
+        if (booking.getPointsEarningId() != null)
+            loyaltyAdapter.discardPointsEarned(booking.getPointsEarningId());
+
+        if (booking.getPaymentId() != null)
+            paymentAdapter.refund(booking.getPaymentId());
+
+        if (booking.getRedemptionId() != null)
+            loyaltyAdapter.reclaimPoints(booking.getRedemptionId());
+
+        if (booking.getSeatsReservationId() != null)
+            fiAdapter.cancelReservation(booking.getSeatsReservationId());
     }
 
     @Transactional
@@ -131,11 +133,7 @@ public class BookingServiceImpl implements BookingService {
         if (booking.getStatus() == CANCELLED) {
             return booking;
         }
-        if (booking.getRedeemPoints() && booking.getRedemptionId() != null) {
-            loyaltyAdapter.reclaimPoints(booking.getRedemptionId());
-        }
-        paymentAdapter.refund(booking.getPaymentId());
-        fiAdapter.cancelReservation(booking.getSeatsReservationId());
+        rollbackBooking(booking);
         booking.setStatus(CANCELLED);
         return repo.save(booking);
     }

@@ -1,12 +1,8 @@
 package aloha.spring.microservices.booking_service.adapter;
 
-import java.math.BigDecimal;
-
 public interface PaymentAdapter {
 
-    Long pay(BigDecimal amountDue);
-
-    void refund(Long paymentID);
+    void refund(Long paymentId);
 
     Payment pay(PaymentRequest paymentRequest);
 

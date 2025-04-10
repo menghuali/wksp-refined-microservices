@@ -8,4 +8,6 @@ public interface LoyaltyAdapter {
 
     PointsEarned earnPoints(PointsEarningRequest pointsEarningRequest);
 
+    void discardPointsEarned(Long pointsEarningId);
+
 }
