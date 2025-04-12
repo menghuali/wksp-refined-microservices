@@ -62,6 +62,9 @@ public class BookingServiceImpl implements BookingService {
                     .lastName(request.getLastName()).guests(request.getGuests())
                     .creditCardNumber(request.getCrediCardNumber()).loyaltyId(request.getLoyaltyId()).build();
 
+            // Generate flight ID
+            booking.getFlight().initFlightId();
+
             // Reserve seats
             SeatReservationRequest seatReserveReq = new SeatReservationRequest(request.getFlight(),
                     booking.getGuests().size());
@@ -78,9 +81,6 @@ public class BookingServiceImpl implements BookingService {
                 booking.setRedemptionId(redemption.getId());
                 booking.setPointsRedeemed(redemption.getPointsRedeemed());
                 booking.setDeductionAmount(redemption.getDeductionAmount());
-                if (!redemption.getRedeemed()) {
-                    booking.addMemo("Loyalty points balance is zero. Cannot redeem points.");
-                }
             }
 
             // Make payment
