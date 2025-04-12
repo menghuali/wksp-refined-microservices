@@ -110,13 +110,13 @@ public class BookingServiceImpl implements BookingService {
 
     private void rollbackBooking(Booking booking) {
         if (booking.getPointsEarningId() != null)
-            loyaltyAdapter.discardPointsEarned(booking.getPointsEarningId());
+            loyaltyAdapter.cancelPointsEarned(booking.getPointsEarningId());
 
         if (booking.getPaymentId() != null)
             paymentAdapter.refund(booking.getPaymentId());
 
         if (booking.getRedemptionId() != null)
-            loyaltyAdapter.reclaimPoints(booking.getRedemptionId());
+            loyaltyAdapter.cancelRedemption(booking.getRedemptionId());
 
         if (booking.getSeatsReservationId() != null)
             fiAdapter.cancelReservation(booking.getSeatsReservationId());

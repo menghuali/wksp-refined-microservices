@@ -338,8 +338,8 @@ public class BookingServiceImplTests {
                 assertNotNull(ex);
                 verify(fiAdapter, times(1)).cancelReservation(seatReservationId);
                 verify(paymentAdapter, times(1)).refund(paymentId);
-                verify(loyaltyAdapter, times(1)).reclaimPoints(redemptionId);
-                verify(loyaltyAdapter, times(1)).discardPointsEarned(pointsEarningId);
+                verify(loyaltyAdapter, times(1)).cancelRedemption(redemptionId);
+                verify(loyaltyAdapter, times(1)).cancelPointsEarned(pointsEarningId);
         }
 
         @ParameterizedTest
@@ -355,9 +355,9 @@ public class BookingServiceImplTests {
                 verify(fiAdapter, seatReservatoionId == null ? never() : times(1))
                                 .cancelReservation(seatReservatoionId);
                 verify(paymentAdapter, paymentId == null ? never() : times(1)).refund(paymentId);
-                verify(loyaltyAdapter, redemptionId == null ? never() : times(1)).reclaimPoints(redemptionId);
+                verify(loyaltyAdapter, redemptionId == null ? never() : times(1)).cancelRedemption(redemptionId);
                 verify(loyaltyAdapter, pointsEarningId == null ? never() : times(1))
-                                .discardPointsEarned(pointsEarningId);
+                                .cancelPointsEarned(pointsEarningId);
         }
 
         private static Stream<Arguments> cancelBookingScenarios() {
