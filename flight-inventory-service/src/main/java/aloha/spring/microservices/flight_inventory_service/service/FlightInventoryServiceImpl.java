@@ -41,10 +41,10 @@ public class FlightInventoryServiceImpl implements FlightInventoryService {
                 .amountDue(inventory.getUnitPrice().multiply(BigDecimal.valueOf(seatAmount)))
                 .status(ReservationStatus.ACTIVE)
                 .build();
-        inventory.reserveSeat(seatAmount);
-        rsRepo.save(reservation);
+        Reservation saved = rsRepo.save(reservation);
+        inventory.reserveSeat(saved);
         fiRepo.save(inventory);
-        return reservation;
+        return saved;
     }
 
     @Transactional
@@ -52,7 +52,7 @@ public class FlightInventoryServiceImpl implements FlightInventoryService {
     public void cancelReservation(Long id) {
         Reservation reservation = getReservation(id);
         FlightInventory inventory = reservation.getFlightInventory();
-        inventory.cancelReservation(reservation.getSeatAmount());
+        inventory.cancelReservation(reservation);
         reservation.setStatus(ReservationStatus.CANCELLED);
         rsRepo.save(reservation);
         fiRepo.save(inventory);

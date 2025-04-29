@@ -2,9 +2,12 @@ package aloha.spring.microservices.flight_inventory_service.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,12 +31,16 @@ public class FlightInventory {
     private Integer seatsBooked;
     private BigDecimal unitPrice;
 
-    public void reserveSeat(Integer seatAmount) {
-        seatsBooked += seatAmount;
+    @OneToMany(mappedBy = "flightInventory")
+    private List<Reservation> reservations;
+
+    public void reserveSeat(Reservation reservation) {
+        reservations.add(reservation);
+        seatsBooked += reservation.getSeatAmount();
     }
 
-    public void cancelReservation(Integer seatAmount) {
-        seatsBooked -= seatAmount;
+    public void cancelReservation(Reservation reservation) {
+        seatsBooked -= reservation.getSeatAmount();
     }
 
 }
